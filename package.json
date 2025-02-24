@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "aframe": "^1.6.0",
+    "easyrtc": "^1.1.0",
+    "networked-aframe": "^0.14.0",
+    "socket.io": "^4.8.1",
+    "ws": "^8.18.1"
+  }
+}
