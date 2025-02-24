@@ -7,170 +7,26 @@
     <script src="https://unpkg.com/networked-aframe/dist/networked-aframe.min.js"></script>
 </head>
 <body>
-    <a-scene networked-scene="room: myRoom; adapter: wssimplewebrtc;">
-        <a-box color="tomato" depth="2" height="10" width="0.5" id="obstacle"></a-box>
-        
-        <a-entity 
-            position="0 1 -5" 
-            gltf-model="https://firebasestorage.googleapis.com/v0/b/chordgen-5da02.appspot.com/o/office_modle.glb?alt=media&token=d74aa04c-d032-425a-bdb6-978ea675a949"
-            scale="2 2 2"
-            class="model"
-            id="model1">
-        </a-entity>
+    <a-scene networked-scene="room: myRoom; adapter: wss://hubs.a-frame.io;">
         <a-assets>
             <template id="avatar-template">
                 <a-entity>
-                    <a-box color="blue" scale="0 1 0"></a-box>
+                    <a-box color="blue" scale="0.5 1.5 0.5"></a-box>
                 </a-entity>
             </template>
         </a-assets>
-        
-        <a-entity 
-            position="32 1.8 -8" 
-            gltf-model="https://firebasestorage.googleapis.com/v0/b/chordgen-5da02.appspot.com/o/studio__office__interior.glb?alt=media&token=c51e983a-0539-4c3b-a6a8-06251f2cf00a"
-            scale="2 2 2"
-            class="no_model"
-            id="model2"
-            rotation="0 180 0">
-        </a-entity>
 
-        <a-entity>
-            <a-camera camera-limiter collision-checker wasd-controls look-controls="pointerLockEnabled: true" id="player" position="0 4 0" >
+        <!-- Multiplayer Player Entity -->
+        <a-entity id="player" position="0 1.6 0" networked="template:#avatar-template; attachTemplateToLocal: false;">
+            <a-camera position="0 1.6 0" wasd-controls look-controls="pointerLockEnabled: true">
                 <a-cursor></a-cursor>
-                <a-entity 
-                    id="bodyModel" 
-                    gltf-model="https://firebasestorage.googleapis.com/v0/b/chordgen-5da02.appspot.com/o/box_charactor-kid.glb?alt=media&token=dd3928a3-fd54-4bed-bb83-18b86357f701" 
-                    position="0 -1.6 -1" 
-                    scale="0.5 0.5 0.5">
-                </a-entity>
             </a-camera>
         </a-entity>
 
-        <a-entity id="menu" position="0 2 0">
-            <a-plane id="btn1" width="1" height="0.4" position="22.9 2 0" color="blue" scale="2 2 2" rotation="0 -90 0"
-                     text="value: Enter Room; align: center; color: white; width: 3"
-                     event-set__mouseenter="_event: mouseenter; color: red"
-                     event-set__mouseleave="_event: mouseleave; color: blue"
-                     my-button1>
-            </a-plane>
-        </a-entity>
-        <a-entity id="menu" position="0 2 0">
-            <a-plane id="btn1" width="1" height="0.4" position="23.5 2 0" color="blue" scale="2 2 2" rotation="0 90 0"
-                     text="value: Exit Room; align: center; color: white; width: 3"
-                     event-set__mouseenter="_event: mouseenter; color: red"
-                     event-set__mouseleave="_event: mouseleave; color: blue"
-                     my-button2>
-            </a-plane>
-        </a-entity>
-    </a-scene> 
-
-    <script>
-        AFRAME.registerComponent("my-button1", {
-            init: function () {
-                this.el.addEventListener("click", function () {
-                    console.log("Switching Models...");
-                    document.getElementById("model1").className = "no_model";
-                    document.getElementById("model2").className = "model";
-
-                    // Wait for a frame to ensure the model is active
-                    setTimeout(() => {
-                        let camera = document.getElementById("player");
-                        camera.components["camera-limiter"].updateBoundingBox();
-                    }, 500); 
-                });
-            }
-        });
-        AFRAME.registerComponent("my-button2", {
-            init: function () {
-                this.el.addEventListener("click", function () {
-                    console.log("Switching Models...");
-                    document.getElementById("model1").className = "model";
-                    document.getElementById("model2").className = "no_model";
-
-                    // Wait for a frame to ensure the model is active
-                    setTimeout(() => {
-                        let camera = document.getElementById("player");
-                        camera.components["camera-limiter"].updateBoundingBox();
-                    }, 500); 
-                });
-            }
-        });
-
-        AFRAME.registerComponent("camera-limiter", {
-            init: function () {
-                this.camera = this.el;
-                this.boundingBox = null;
-
-                this.updateBoundingBox();
-            },
-
-            updateBoundingBox: function () {
-                let modelEntity = document.querySelector(".model"); 
-                if (!modelEntity) return;
-
-                // Wait for model to load
-                modelEntity.addEventListener("model-loaded", (event) => {
-                    let model = event.detail.model;
-                    let boundingBox = new THREE.Box3().setFromObject(model);
-
-                    this.boundingBox = boundingBox;
-                    console.log("Updated Bounding Box:", this.boundingBox);
-                });
-
-                // If model is already loaded, trigger manually
-                if (modelEntity.hasLoaded) {
-                    modelEntity.emit("model-loaded", { model: modelEntity.getObject3D("mesh") });
-                }
-            },
-
-            tick: function () {
-                if (!this.boundingBox) return;
-
-                let pos = this.camera.object3D.position;
-                pos.x = THREE.MathUtils.clamp(pos.x, this.boundingBox.min.x, this.boundingBox.max.x);
-                pos.y = THREE.MathUtils.clamp(pos.y, this.boundingBox.min.y, this.boundingBox.max.y);
-                pos.z = THREE.MathUtils.clamp(pos.z, this.boundingBox.min.z, this.boundingBox.max.z);
-
-                this.camera.setAttribute("position", pos);
-            }
-        });
-
-        AFRAME.registerComponent("collision-checker", {
-            tick: function () { 
-                let player = this.el;
-                let obstacle = document.querySelector("#obstacle");
-        
-                if (!obstacle) return;
-        
-                let box1 = new THREE.Box3().setFromObject(player.object3D);
-                let box2 = new THREE.Box3().setFromObject(obstacle.object3D);
-                if (box1.intersectsBox(box2)) {
-                    console.log("Collision detected!");
-                }
-            }
-        });
-
-        document.addEventListener("keydown", function (event) {
-            if (event.key === "Escape") {
-                event.preventDefault();
-                let camera = document.getElementById("player");
-                if (document.pointerLockElement) {
-                    document.exitPointerLock();
-                    console.log("Pointer lock disabled!");
-                }
-                camera.setAttribute("look-controls", "enabled: true; pointerLockEnabled: false");
-            }
-        });
-
-        document.addEventListener("click", function () {
-            let camera = document.getElementById("player");
-            if (!document.pointerLockElement) {
-                camera.requestPointerLock();
-                console.log("Pointer lock enabled!");
-            }
-            camera.setAttribute("look-controls", "enabled: true; pointerLockEnabled: true");
-        });
-
-    </script>
+        <!-- Environment -->
+        <a-box position="-2 0 0" color="tomato" depth="2" height="10" width="0.5"></a-box>
+        <a-entity gltf-model="https://firebasestorage.googleapis.com/v0/b/chordgen-5da02.appspot.com/o/office_modle.glb?alt=media&token=d74aa04c-d032-425a-bdb6-978ea675a949"
+                  position="0 1 -5" scale="2 2 2" class="model"></a-entity>
+    </a-scene>
 </body>
 </html>
